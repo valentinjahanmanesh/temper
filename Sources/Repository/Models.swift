@@ -16,7 +16,8 @@ extension ShiftDTO {
 			  title: self.job.clientName,
 			  startAt: self.startsAt.dateDisplay,
 			  endAt: self.endsAt.dateDisplay,
-			  earningsPerHour: self.earningsPerHour, category: self.job.category)
+			  earningsPerHour: self.earningsPerHour,
+			  category: self.job.category)
 	}
 }
 
@@ -105,7 +106,7 @@ struct ShiftDTO: Decodable {
 		let earningsPerHourCurrencyValue = try earningsPerHourValues.decode(String.self, forKey: .currency)
 		let earningsPerHourAmountValue = try earningsPerHourValues.decode(Double.self, forKey: .amount)
 
-		earningsPerHour = "\(Currency(shorthand: earningsPerHourCurrencyValue).sign) \(earningsPerHourAmountValue)"
+		earningsPerHour = "\(Currency(shorthand: earningsPerHourCurrencyValue).sign) \(String(format: "%02.02f", earningsPerHourAmountValue))"
 
 		// job
 		job = try values.decode(JobDTO.self, forKey: .job)
