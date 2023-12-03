@@ -27,35 +27,26 @@ public struct HomeScreen: View {
 			Screen(paddingHorizontal: 0) {
 				VStack{
 					ZStack(alignment: .bottom) {
-						List(viewStore.shifts, id: \.date.id) {datedShift in
-							Section(header: ListSectionHeader(datedShift.date.display)) {
-								ForEach(datedShift.shifts) { shift in
-									ListItem(shift: shift)
-										.listRowSeparator(.hidden)
-										.onAppear {
-											if viewStore.shifts.last == datedShift, datedShift.shifts.last == shift {
-												self.store.send(.getShifts())
-											}
-										}
-								}
-							}
-						}
-						.listStyle(PlainListStyle())
-						.refreshable {
-							self.store.send(.getShifts(reset: true))
-						}
-						if viewStore.isNextPageLoading == .loading {
+						switch viewStore.isScreenLoading {
+						case .error(_):
+							EmptyScreenView(title: HomeFeature.Localization.emptyViewErrorTitle,
+											action: .init(title: HomeFeature.Localization.retryButtonTitle, callback: {
+								self.store.send(.viewDidLoad)
+							}))
+						case .loading:
 							ProgressView()
 								.frame(width: 40)
+						case .none:
+							ShiftsList(shifts: viewStore.shifts,
+									   isNextPageLoading: viewStore.isNextPageLoading)
+							Actions(onFiltersTapped: {
+								viewStore.send(.navigate(to: .filtersScreen))
+
+							}, onMapTapped: {
+								viewStore.send(.navigate(to: .mapScreen))
+							})
+							.padding(.bottom, styling.spaces.horizontal.large)
 						}
-
-						Actions(onFiltersTapped: {
-							viewStore.send(.navigate(to: .filtersScreen))
-
-						}, onMapTapped: {
-							viewStore.send(.navigate(to: .mapScreen))
-						})
-						.padding(.bottom, styling.spaces.horizontal.large)
 
 						EmptyNavigationLink(isActive: .init(get: {viewStore.route == .filtersScreen},
 															set: { isActive in viewStore.send(.navigate(to: .none))})) {
@@ -72,6 +63,7 @@ public struct HomeScreen: View {
 						}
 					}
 				}
+				.frame(maxHeight: .infinity)
 				.padding(.top, 1)
 				.preferenceNavigationBar(title: HomeFeature.Localization.navigationBarTitle)
 			}
@@ -80,6 +72,52 @@ public struct HomeScreen: View {
 					viewStore.send(.viewDidLoad)
 				}
 			}
+		}
+	}
+
+	@ViewBuilder
+	private func ShiftsList(shifts: [HomeFeature.State.DatedShits],
+							isNextPageLoading: LoadingStatus) -> some View {
+		List(shifts, id: \.date.id) {datedShift in
+			Section(header: ListSectionHeader(datedShift.date.display)) {
+				ForEach(datedShift.shifts) { shift in
+					ListItem(shift: shift)
+						.listRowSeparator(.hidden)
+						.onAppear {
+							if shifts.last == datedShift, datedShift.shifts.last == shift {
+								self.store.send(.getShifts())
+							}
+						}
+					if shifts.last == datedShift,
+					   datedShift.shifts.last == shift,
+					   !isNextPageLoading.isError {
+						VStack{
+							LoadMore()
+							Spacer().frame(height: styling.spaces.horizontal.maxLarge * 3)
+						}
+						.listRowSeparator(.hidden)
+					}
+				}
+			}
+		}
+		.listStyle(PlainListStyle())
+		.refreshable {
+			self.store.send(.getShifts(reset: true))
+		}
+	}
+
+	@ViewBuilder
+	private func LoadMore() -> some View {
+		HStack {
+			Spacer()
+			RetryButton(title: HomeFeature.Localization.retryButtonTitle) {
+				self.store.send(.getShifts())
+			}
+			.buttonStyle(.borderless)
+			.padding(.horizontal, styling.spaces.horizontal.medium)
+			.padding(.vertical, styling.spaces.vertical.small)
+			
+			Spacer()
 		}
 	}
 	@ViewBuilder

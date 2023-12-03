@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "api.request.went.wrong" : {
+      "comment" : "This error will be shown when something goes wrong with the api requests and network activities.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong."
+          }
+        }
+      }
+    },
     "filters.button.label" : {
       "comment" : "Title of the filters button, it comes after a small filters icon and navigates the user to the filters screen",
       "extractionState" : "manual",
@@ -123,6 +135,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kaart"
+          }
+        }
+      }
+    },
+    "retry.button.title" : {
+      "comment" : "Title of the retry button, this button will be used to retry a failed api call",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
           }
         }
       }

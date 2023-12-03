@@ -45,6 +45,7 @@ public struct HomeFeature {
 		var isScreenLoading: LoadingStatus
 		var isNextPageLoading: LoadingStatus
 		var selectedShift: Shift?
+
 		@PresentationState var filtersState: FiltersFeature.State?
 		@PresentationState var mapState: MapFeature.State?
 		var route: Route?
@@ -72,6 +73,8 @@ public struct HomeFeature {
 		static let navigationBarTitle: LocalizedStringKey = "home.screen.title"
 		static let mapButtonTitle: LocalizedStringKey = "map.button.label"
 		static let filtersButtonTitle: LocalizedStringKey = "filters.button.label"
+		static let retryButtonTitle: LocalizedStringKey = "retry.button.title"
+		static let emptyViewErrorTitle: LocalizedStringKey = "api.request.went.wrong"
 	}
 
 	@CasePathable
@@ -82,6 +85,7 @@ public struct HomeFeature {
 		case getShifts(reset: Bool = false)
 		case receivedShifts(HomeFeature.State.DatedShits, reset: Bool = false)
 		case navigate(to: Route?)
+		case errorOccurred(String)
 	}
 
 	public enum Route {
@@ -98,6 +102,7 @@ public struct HomeFeature {
 			switch action {
 			case .viewDidLoad:
 				if state.shifts.isEmpty {
+					state.isScreenLoading = .loading
 					return .send(.getShifts(reset: true))
 				} else {
 					return .none
@@ -121,8 +126,7 @@ public struct HomeFeature {
 						let shifts = try await useCase.getShifts([.date(nextPage)])
 						await send(.receivedShifts(.init(date: nextPage.dateDisplay, shifts: shifts), reset: isReset))
 					} catch(let error) {
-						#warning("Need to handle error")
-						print(error)
+						await send(.errorOccurred(error.localizedDescription))
 					}
 				}
 			case .receivedShifts(let shifts, let isReset):
@@ -131,13 +135,23 @@ public struct HomeFeature {
 				} else {
 					state.shifts += [shifts]
 				}
-
+				state.isScreenLoading = .none
 				state.isNextPageLoading = .none
+				return .none
+			case .errorOccurred(let error):
+				if state.isScreenLoading != .loading {
+					state.isNextPageLoading = .none
+					state.isNextPageLoading = .error(error)
+				} else {
+					state.isNextPageLoading = .error(error)
+					state.isScreenLoading = .error(error)
+				}
+
 				return .none
 			case .filtersAction(.dismiss), .mapAction(.dismiss):
 				state.route = nil
-
 				return .none
+
 			case .filtersAction, .mapAction:
 				return .none
 
